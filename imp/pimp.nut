@@ -95,7 +95,7 @@ class raspberryPi
             // Flush the serial port
             flush();
 
-            // Send intialisation command
+            // Send initialisation probe command
             sendString("\xAA\x00");
 
             // Wait up to 1s for response
@@ -163,7 +163,7 @@ class raspberryPi
              
             case 3 : // Receiving data
                 rxData += c.tochar();
-                if(rxOffset == rxLength)
+                if(rxOffset++ == rxLength)
                 {
                     // Data complete
                     command(rxCommand, rxData);
