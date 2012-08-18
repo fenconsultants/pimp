@@ -1,0 +1,5 @@
+# Dir	ID	Port or TTY	Type	Name
+input	0	/dev/ttyS1	number	Input One
+input	1	9000		number	Input Two
+output	0	/dev/ttyS1	number	Output One
+output	1	9000		number	Output Two
