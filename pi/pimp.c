@@ -108,6 +108,9 @@ void sendPortList()
  */
 void command()
 {
+	char	ids[3];
+	int	id;
+
 	switch(rxCommand)
 	{
 		case 0 : /* Probe */
@@ -117,7 +120,25 @@ void command()
 			break;
 
 		case 1 : /* Process received data */
-			printf("Received: %s\n", rxData);
+			/* Get port ID */
+			memcpy(ids, rxData, 2);
+			ids[2] = '\0';
+			id = atoi(ids);
+
+			/* Validate ID */
+			if(id >= MAXPORTS) break;
+			if(inputPorts[id].id == -1) break;
+
+			/* Process data */
+			if(strcmp(inputPorts[id].local, "console") == 0)
+			{
+				/* Echo to stdout */
+				printf("Received: [%02d] %s\n", id, rxData + 2);
+			}
+			else
+			{
+				/* TODO tty and tcp ports */
+			}
 			break;
 
 		default : /* Anything else is invalid */
@@ -169,6 +190,7 @@ void rxFsm(char c)
 			{
 				// Data complete
 				command();
+				memset(rxData, '\0', MAXPKTSIZE);
 				rxState = 0;
 			}
 			break;
