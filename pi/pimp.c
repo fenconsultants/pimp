@@ -47,7 +47,7 @@
 #include <linux/serial.h>
 #include <signal.h>
 
-#define TTYNAME "/dev/ttyS0"
+#define TTYNAME "/dev/ttyAMA0"
 #define MAXPKTSIZE 16
 #define MAXPORTS 8
 
@@ -89,14 +89,14 @@ void sendPortList()
 		if(inputPorts[i].id != -1)
 		{
 			// Add input port <0xAA><0x80><Length><ID 0><ID 1><Type><0x09><Name>
-			sprintf(s, "\xAA\x80%c%02d%s\x09%s", strlen(inputPorts[i].type) + strlen(inputPorts[i].name) + 3, inputPorts[i].id, inputPorts[i].type, inputPorts[i].name);
+			sprintf(s, "\xAA\x80%c%02d%s\x09%s", strlen(inputPorts[i].type) + strlen(inputPorts[i].name) + 2, inputPorts[i].id, inputPorts[i].type, inputPorts[i].name);
 			write(impFd, s, strlen(s));
 			fsync(impFd);
 		}
 		if(outputPorts[i].id != -1)
 		{
 			// Add output port <0xAA><0x81><Length><ID 0><ID 1><Type><0x09><Name>
-			sprintf(s, "\xAA\x81%c%02d%s\x09%s", strlen(outputPorts[i].type) + strlen(outputPorts[i].name) + 3, outputPorts[i].id, outputPorts[i].type, outputPorts[i].name);
+			sprintf(s, "\xAA\x81%c%02d%s\x09%s", strlen(outputPorts[i].type) + strlen(outputPorts[i].name) + 2, outputPorts[i].id, outputPorts[i].type, outputPorts[i].name);
 			write(impFd, s, strlen(s));
 			fsync(impFd);
 		}
@@ -111,6 +111,8 @@ void command()
 	switch(rxCommand)
 	{
 		case 0 : /* Probe */
+			write(impFd, "\x55", 1);
+			fsync(impFd);
 			sendPortList();
 			break;
 
@@ -163,7 +165,7 @@ void rxFsm(char c)
 
 		case 3 : // Receiving data
 			rxData[rxOffset] = c;
-			if(rxOffset++ == rxLength)
+			if(rxOffset++ == rxLength-1)
 			{
 				// Data complete
 				command();

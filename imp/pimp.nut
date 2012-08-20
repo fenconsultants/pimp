@@ -34,18 +34,22 @@
 class input extends InputPort
 {
     id = null;
+    parent = null;
 
-    constructor(i, name, type)
+    constructor(i, name, type, p)
     {
         base.constructor(name, type);
         id = i;
+        parent = p;
     }
     
     // Override set to forward received data to the Pi
     function set(value)
     {
         // Send to Pi
-        sendString(format("\xAA\x01%02d%s", id, value.tostring()));
+        local s = value.tostring();
+        server.log(format("Sending to %02d '%s'", id, s));
+        parent.sendString(format("\xAA\x01%c%02d%s", s.len() + 2, id, s));
     }
 }
 
@@ -75,6 +79,7 @@ class raspberryPi
     rxCommand = 0;
     rxData = "";
     rxOffset = 0;
+    rxLength = 0;
     
     // Ports
     inputPorts = [];
@@ -95,7 +100,7 @@ class raspberryPi
             // Flush the serial port
             flush();
 
-            // Send initialisation probe command
+            // Send intialisation command
             sendString("\xAA\x00");
 
             // Wait up to 1s for response
@@ -177,13 +182,14 @@ class raspberryPi
     // Process a command received from Pi
     function command(cmd, data = "")
     {
+        server.log(format("Got command %02x", cmd));
         switch(cmd)
         {
             case 0x80 : // Define input port
                 local id = data.slice(0, 2).tointeger();
                 local type = data.slice(2, data.find("\x09"));
                 local name = data.slice(type.len()+3)
-                inputPorts.append(input(id, name, type));
+                inputPorts.append(input(id, name, type, this));
                 server.log(format("Added input #%02d %s [%s]", id, name, type));
                 imp.configure("Pimp", inputPorts, outputPorts);
                 break;
@@ -193,7 +199,7 @@ class raspberryPi
                 local type = data.slice(2, data.find("\x09"));
                 local name = data.slice(type.len()+3)
                 outputPorts.append(output(id, name, type));
-                server.log(format("Added input #%02d %s [%s]", id, name, type));
+                server.log(format("Added output #%02d %s [%s]", id, name, type));
                 imp.configure("Pimp", inputPorts, outputPorts);
                 break;
 
